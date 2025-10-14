@@ -52,35 +52,59 @@ class KnnClass:
         """
         showColumn에 지정된 피쳐를 기준으로 KNN 결과를 시각화합니다.
         """
-        # 1. 시각화에 사용할 x, y축 인덱스 결정
-        # 사용자가 1, 2로 입력하면 인덱스는 0, 1이 됩니다.
+# 1. 시각화 축 인덱스 결정
         x_index = self.show_columns[0] - 1
         y_index = self.show_columns[1] - 1
 
-        # 2. 클래스별로 색상을 다르게 지정하기 위한 준비
+        ax = plt.gca()
+
+        #  클래스별 색상 준비
         unique_labels = sorted(list(set(self.labels)))
         colors = plt.cm.rainbow([i/len(unique_labels) for i in range(len(unique_labels))])
         color_map = {label: color for label, color in zip(unique_labels, colors)}
 
-        # 3. 전체 샘플 데이터 그리기
+        # 전체 샘플 데이터 그리기
         for point, label in zip(self.sample_data, self.labels):
             plt.scatter(point[x_index], point[y_index], color=color_map[label], label=label if label in unique_labels else None)
-            unique_labels.remove(label) if label in unique_labels else None # 범례 중복 방지
+            unique_labels.remove(label) if label in unique_labels else None
 
-        # 4. 새로운 데이터 포인트 그리기 (크고 검은 별)
+        # 새로운 데이터 포인트 그리기
         plt.scatter(self.new_point[x_index], self.new_point[y_index], color='black', marker='*', s=200, edgecolor='white', label='New Point')
 
-        # 5. K개의 이웃들 강조하기 (녹색 원으로 표시)
+        # K개의 이웃 강조하기
         k_nearest_neighbors = self.dist_info_list[:self.k]
-        for dist, point, label in k_nearest_neighbors:
+        for _, point, _ in k_nearest_neighbors:
             plt.scatter(point[x_index], point[y_index], facecolors='none', edgecolors='green', s=150, linewidths=2)
 
-        # 6. 그래프 꾸미기
+        # 원 그리기 
+        # k값이 데이터 개수보다 작거나 같을 때만
+        if self.dist_info_list and self.k <= len(self.dist_info_list):
+            # 반지름 결정: k번째 이웃까지의 거리
+
+            radius = self.dist_info_list[self.k - 1][0]
+            
+            # 원 객체 생성
+            circle = plt.Circle(
+                (self.new_point[x_index], self.new_point[y_index]), # 원의 중심
+                radius, # 반지름
+                facecolor='yellow', # 원 내부 색상 (반투명)
+                alpha=0.4,
+                edgecolor='green', # 원 테두리 색상
+                linestyle='-', # 점선 스타일
+                linewidth=2.5
+            )
+            
+            #  그래프에 원 추가
+            ax.add_patch(circle)
+
+        # 그래프
         plt.title(f'KNN Visualization (k={self.k})')
         plt.xlabel(f'Feature {x_index + 1}')
         plt.ylabel(f'Feature {y_index + 1}')
         plt.legend()
         plt.grid(True)
+        # 그래프의 가로세로 비율을 같게 맞춰 원이 찌그러져 보이지 않게 함
+        plt.axis('equal') 
         plt.show()
 
     def euclidean_distance(self, sampleD:list, inputD:list):
